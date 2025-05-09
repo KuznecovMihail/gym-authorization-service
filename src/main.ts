@@ -6,7 +6,7 @@ import { ValidationPipe } from "./pipes/validation.pipes";
 async function start() {
   const PORT = process.env.PORT || 5000;
   const app = await NestFactory.create(AppModule);
-
+  app.enableCors();
   const config = new DocumentBuilder()
     .setTitle("GymService")
     .setDescription("Описание API")

@@ -5,7 +5,6 @@ import { InjectModel } from "@nestjs/sequelize";
 import { RolesService } from "src/roles/roles.service";
 import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
-import { Roles } from "src/auth/roles-auth.decorator";
 import { RolesEnum } from "src/enum/Roles";
 
 @Injectable()
@@ -17,7 +16,9 @@ export class UsersService {
 
   async createUser(dto: CreateUserDto) {
     const user = await this.userRepository.create(dto);
-    const role = await this.rolesService.getRoleByValue(RolesEnum.USER);
+    const role = await this.rolesService.getRoleByValue({
+      value: RolesEnum.USER,
+    });
     if (role !== null) {
       await user.$set("roles", [role.id]);
       user.dataValues.roles = [role.dataValues];
@@ -56,7 +57,7 @@ export class UsersService {
 
   async addRole(dto: AddRoleDto) {
     const user = await this.userRepository.findByPk(dto.id);
-    const role = await this.rolesService.getRoleByValue(dto.value);
+    const role = await this.rolesService.getRoleByValue({ value: dto.value });
     if (user && role) {
       await user.$add("role", role.id);
       return dto;

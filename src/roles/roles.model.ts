@@ -8,6 +8,7 @@ import {
 } from "sequelize-typescript";
 import { User } from "src/users/user.model";
 import { UserRoles } from "./user-role-model";
+import { RolesEnum } from "src/enum/Roles";
 
 interface RoleCreationAttribute {
   value: string;
@@ -25,7 +26,10 @@ export class Role extends Model<Role, RoleCreationAttribute> {
   })
   declare id: number;
 
-  @ApiProperty({ example: "ADMIN", description: "Значение роли пользователя" })
+  @ApiProperty({
+    example: RolesEnum.MANAGER,
+    description: "Значение роли пользователя",
+  })
   @Column({ type: DataType.STRING, unique: true, allowNull: false })
   value: string;
 

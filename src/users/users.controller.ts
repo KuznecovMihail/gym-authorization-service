@@ -15,6 +15,7 @@ import { Roles } from "src/auth/roles-auth.decorator";
 import { RolesGuard } from "src/auth/roles.guard";
 import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
+import { RolesEnum } from "src/enum/Roles";
 
 @ApiTags("Пользователи")
 @Controller("users")
@@ -22,7 +23,7 @@ export class UsersController {
   constructor(private userServise: UsersService) {}
   @ApiOperation({ summary: "Создать пользователя" })
   @ApiResponse({ status: 200, type: User })
-  @Roles("ADMIN")
+  @Roles(RolesEnum.MANAGER)
   @UseGuards(RolesGuard)
   @Post()
   create(@Body() userDto: CreateUserDto) {
@@ -31,7 +32,7 @@ export class UsersController {
 
   @ApiOperation({ summary: "Получить всех пользователей" })
   @ApiResponse({ status: 200, type: [User] })
-  @Roles("ADMIN")
+  @Roles(RolesEnum.MANAGER)
   @UseGuards(RolesGuard)
   @Get()
   getAll() {
@@ -47,8 +48,8 @@ export class UsersController {
 
   @ApiOperation({ summary: "Выдача ролей" })
   @ApiResponse({ status: 200 })
-  @Roles("ADMIN")
-  @UseGuards(RolesGuard)
+  // @Roles(RolesEnum.MANAGER)
+  // @UseGuards(RolesGuard)
   @Post("/role")
   addRole(@Body() dto: AddRoleDto) {
     return this.userServise.addRole(dto);
