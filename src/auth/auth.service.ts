@@ -78,7 +78,13 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const payload = { email: user.email, id: user.id, roles: user.roles };
+    const roles = user.dataValues.roles;
+    const roleValues = roles.map((role) => role.dataValues.value);
+    const payload = {
+      email: user.dataValues.email,
+      id: user.dataValues.id,
+      roles: roleValues,
+    };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: "15m" });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: "24h" });
