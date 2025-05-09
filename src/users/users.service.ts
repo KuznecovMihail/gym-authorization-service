@@ -59,7 +59,7 @@ export class UsersService {
     const user = await this.userRepository.findByPk(dto.id);
     const role = await this.rolesService.getRoleByValue({ value: dto.value });
     if (user && role) {
-      await user.$add("role", role.id);
+      await user.$add("role", role.dataValues.id);
       return dto;
     }
     throw new HttpException(
@@ -85,11 +85,13 @@ export class UsersService {
   private transformUser(user: User | null): ViewUserDto | null {
     if (!user) return null;
     const { dataValues } = user;
-    const stringRoles = dataValues.roles.map((el) => el.value);
+    const roles = user.dataValues.roles;
+    const roleValues = roles.map((role) => role.dataValues.value);
+
     return {
       id: dataValues.id,
       email: dataValues.email,
-      roles: stringRoles,
+      roles: roleValues,
     };
   }
 }
