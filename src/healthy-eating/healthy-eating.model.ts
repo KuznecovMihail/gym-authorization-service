@@ -6,6 +6,7 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
+import { EatingType } from "src/enum/EatingType";
 import { User } from "src/users/user.model";
 
 interface HealthyEatingAttribute {
@@ -34,36 +35,42 @@ export class HealthyEating extends Model<
   declare id: number;
 
   @Column({ type: DataType.STRING, unique: true, allowNull: true })
-  title: string;
+  declare title: string;
 
   @Column({ type: DataType.STRING, allowNull: true })
-  compound: string;
+  declare compound: string;
 
   @Column({ type: DataType.INTEGER, allowNull: true })
-  kcal: number;
+  declare kcal: number;
 
   @Column({ type: DataType.INTEGER, allowNull: true })
-  squirrels: number;
+  declare squirrels: number;
 
   @Column({ type: DataType.INTEGER, allowNull: true })
-  fats: number;
+  declare fats: number;
 
   @Column({ type: DataType.INTEGER })
-  carbohydrates: number;
+  declare carbohydrates: number;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true,
   })
-  price: number;
+  declare price: number;
 
   @Column({ type: DataType.STRING, allowNull: true })
-  image: string;
+  declare image: string;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(EatingType)),
+    allowNull: true,
+  })
+  declare eatingType: EatingType;
 
   @ForeignKey(() => User)
   @Column({ type: DataType.INTEGER })
-  userId: number;
+  declare userId: number;
 
   @BelongsTo(() => User)
-  author: User;
+  declare author: User;
 }

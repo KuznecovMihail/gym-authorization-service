@@ -5,6 +5,7 @@ import { SequelizeModule } from "@nestjs/sequelize";
 import { User } from "src/users/user.model";
 import { HealthyEating } from "./healthy-eating.model";
 import { FilesModule } from "src/files/files.module";
+import { UsersModule } from "src/users/users.module";
 
 @Module({
   controllers: [HealthyEatingController],
@@ -13,6 +14,7 @@ import { FilesModule } from "src/files/files.module";
     SequelizeModule.forFeature([User]),
     SequelizeModule.forFeature([HealthyEating]),
     FilesModule,
+    UsersModule,
   ],
   exports: [SequelizeModule],
 })

@@ -10,8 +10,6 @@ import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { AuthModule } from "./auth/auth.module";
 import { JwtModule } from "@nestjs/jwt";
-import { PostsModule } from "./posts/posts.module";
-import { Post } from "./posts/post.model";
 import { FilesModule } from "./files/files.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { HealthyEatingModule } from "./healthy-eating/healthy-eating.module";
@@ -33,7 +31,7 @@ import { UserRoles } from "./user-role/user-role-model";
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      models: [User, Role, UserRoles, Post],
+      models: [User, Role, UserRoles],
       autoLoadModels: true,
     }),
     UsersModule,
@@ -45,7 +43,6 @@ import { UserRoles } from "./user-role/user-role-model";
         expiresIn: "24h",
       },
     }),
-    PostsModule,
     FilesModule,
     ServeStaticModule.forRoot({
       rootPath: path.resolve(__dirname, "static"),

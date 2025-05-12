@@ -9,7 +9,6 @@ import {
   Table,
 } from "sequelize-typescript";
 import { Sex } from "src/enum/Sex";
-import { Post } from "src/posts/post.model";
 import { Role } from "src/roles/roles.model";
 import { UserRoles } from "src/user-role/user-role-model";
 
@@ -31,11 +30,11 @@ export class User extends Model<User, UserCreationAttribute> {
 
   @ApiProperty({ example: "user@mail.ru", description: "email" })
   @Column({ type: DataType.STRING, unique: true, allowNull: false })
-  email: string;
+  declare email: string;
 
   @ApiProperty({ example: "qwerty", description: "password" })
   @Column({ type: DataType.STRING, allowNull: false })
-  password: string;
+  declare password: string;
 
   @ApiProperty({
     example:
@@ -43,7 +42,7 @@ export class User extends Model<User, UserCreationAttribute> {
     description: "refreshToken",
   })
   @Column({ type: DataType.STRING, allowNull: true })
-  refreshToken: string | null;
+  declare refreshToken: string | null;
 
   @ApiProperty({
     example: "FEMALE",
@@ -55,7 +54,7 @@ export class User extends Model<User, UserCreationAttribute> {
     allowNull: true,
   })
   @IsEnum(Sex)
-  sex: Sex;
+  declare sex: Sex;
 
   @ApiProperty({
     example: 165,
@@ -64,7 +63,7 @@ export class User extends Model<User, UserCreationAttribute> {
     maximum: 250,
   })
   @Column({ type: DataType.INTEGER, allowNull: true })
-  height: number;
+  declare height: number;
 
   @ApiProperty({
     example: 75,
@@ -73,7 +72,7 @@ export class User extends Model<User, UserCreationAttribute> {
     maximum: 300,
   })
   @Column({ type: DataType.INTEGER, allowNull: true })
-  weight: number;
+  declare weight: number;
 
   @ApiProperty({
     example: 18,
@@ -82,14 +81,14 @@ export class User extends Model<User, UserCreationAttribute> {
     maximum: 120,
   })
   @Column({ type: DataType.INTEGER, allowNull: true })
-  age: number;
+  declare age: number;
 
   @Column({ type: DataType.STRING, allowNull: true })
-  avatar: string;
+  declare avatar: string;
 
   @BelongsToMany(() => Role, () => UserRoles)
-  roles: Role[];
+  declare roles: Role[];
 
-  @HasMany(() => Post)
-  posts: Post[];
+  // @HasMany(() => Post)
+  // posts: Post[];
 }

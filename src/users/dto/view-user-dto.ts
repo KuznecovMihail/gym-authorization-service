@@ -57,4 +57,11 @@ export class ViewUserDto {
   @Min(12)
   @Max(120)
   age: number;
+
+  @ApiProperty({
+    example: 2200,
+    description: "Ккал",
+  })
+  @IsInt()
+  kalNorm?: number | null;
 }

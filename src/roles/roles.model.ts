@@ -32,12 +32,12 @@ export class Role extends Model<Role, RoleCreationAttribute> {
     description: "Значение роли пользователя",
   })
   @Column({ type: DataType.STRING, unique: true, allowNull: false })
-  value: RolesEnum;
+  declare value: RolesEnum;
 
   @ApiProperty({ example: "Администратор", description: "Описание роли" })
   @Column({ type: DataType.STRING, allowNull: false })
-  description: string;
+  declare description: string;
 
   @BelongsToMany(() => User, () => UserRoles)
-  users: User[];
+  declare users: User[];
 }

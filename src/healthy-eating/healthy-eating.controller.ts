@@ -14,8 +14,14 @@ import { HealthyEatingService } from "./healthy-eating.service";
 import { CreateHealthyEatingDto } from "./dto/create-healthy-eating.dto";
 import { UpdateHealthyEatingDto } from "./dto/update-healthy-eating.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { HealthyEating } from "./healthy-eating.model";
+import { MealPlanResponseDto } from "./dto/meal-plan-response-dto";
 
 @ApiTags("Продукты")
 @Controller("healthyEating")
@@ -40,11 +46,13 @@ export class HealthyEatingController {
     return this.healthyEatingService.findAll();
   }
 
+  @ApiOperation({ summary: "Получение продукт по id" })
   @Get("/:id")
   findOne(@Param("id") id: string) {
     return this.healthyEatingService.findOne(+id);
   }
 
+  @ApiOperation({ summary: "Редактировать продукт" })
   @Patch(":id")
   async update(
     @Param("id", ParseIntPipe) id: number,
@@ -53,8 +61,16 @@ export class HealthyEatingController {
     return this.healthyEatingService.update(id, updateDto);
   }
 
+  @ApiOperation({ summary: "Удалить продукт" })
   @Delete("/:id")
   remove(@Param("id") id: string) {
     return this.healthyEatingService.remove(+id);
+  }
+
+  @ApiOperation({ summary: "Получение продуктов для пользователя" })
+  @ApiOkResponse({ type: MealPlanResponseDto, isArray: true })
+  @Get("/user/:id")
+  getHealthyEatingForUser(@Param("id") id: string) {
+    return this.healthyEatingService.getForUser(+id);
   }
 }

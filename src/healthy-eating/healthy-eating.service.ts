@@ -9,6 +9,18 @@ import { UpdateHealthyEatingDto } from "./dto/update-healthy-eating.dto";
 import { InjectModel } from "@nestjs/sequelize";
 import { HealthyEating } from "./healthy-eating.model";
 import { FilesService } from "src/files/files.service";
+import { UsersService } from "src/users/users.service";
+import { EatingType } from "src/enum/EatingType";
+
+interface MealPlan {
+  breakfast: HealthyEating;
+  lunch: HealthyEating;
+  dinner: HealthyEating;
+  totalCalories: number;
+  totalSquirrels: number;
+  totalFats: number;
+  totalCarbohydrates: number;
+}
 
 @Injectable()
 export class HealthyEatingService {
@@ -32,7 +44,8 @@ export class HealthyEatingService {
   constructor(
     @InjectModel(HealthyEating)
     private healthyEatingRepository: typeof HealthyEating,
-    private filesService: FilesService
+    private filesService: FilesService,
+    private usersService: UsersService
   ) {}
 
   async create(createHealthyEatingDto: CreateHealthyEatingDto, image: any) {
@@ -82,10 +95,113 @@ export class HealthyEatingService {
   async remove(id: number) {
     const healthyEating = await this.healthyEatingRepository.findByPk(id);
 
-    if (!healthyEating) {
+    if (!healthyEating)
       throw new NotFoundException(`Запись с id ${id} не найдена`);
-    }
 
     await healthyEating.destroy();
+  }
+
+  async getForUser(id: number) {
+    const user = await this.usersService.getUsersById(id);
+    if (!user) throw new NotFoundException(`Запись с id ${id} не найдена`);
+
+    const kal = this.usersService.calculateKal(user);
+    if (!kal)
+      throw new HttpException(
+        "Не заполнены обязательное поле",
+        HttpStatus.BAD_REQUEST
+      );
+    return this.getMealPlan(kal);
+  }
+
+  async getMealPlan(dailyCalories: number, tolerancePercentage: number = 10) {
+    const tolerance = dailyCalories * (tolerancePercentage / 100);
+
+    const minCalories = dailyCalories - tolerance;
+    const maxCalories = dailyCalories + tolerance;
+
+    const [breakfasts, lunches, dinners] = await Promise.all([
+      this.getMealsByType(EatingType.BREAKFAST),
+      this.getMealsByType(EatingType.LUNCH),
+      this.getMealsByType(EatingType.DINNER),
+    ]);
+
+    const allCombinations: MealPlan[] = [];
+
+    for (const breakfast of breakfasts) {
+      for (const lunch of lunches) {
+        for (const dinner of dinners) {
+          const totalCalories =
+            breakfast.dataValues.kcal +
+            lunch.dataValues.kcal +
+            dinner.dataValues.kcal;
+
+          if (totalCalories >= minCalories && totalCalories <= maxCalories) {
+            allCombinations.push({
+              breakfast,
+              lunch,
+              dinner,
+              totalCalories,
+              totalSquirrels:
+                breakfast.dataValues.squirrels +
+                lunch.dataValues.squirrels +
+                dinner.dataValues.squirrels,
+              totalFats:
+                breakfast.dataValues.fats +
+                lunch.dataValues.fats +
+                dinner.dataValues.fats,
+              totalCarbohydrates:
+                breakfast.dataValues.carbohydrates +
+                lunch.dataValues.carbohydrates +
+                dinner.dataValues.carbohydrates,
+            });
+          }
+        }
+      }
+    }
+
+    allCombinations.sort(
+      (a, b) =>
+        Math.abs(a.totalCalories - dailyCalories) -
+        Math.abs(b.totalCalories - dailyCalories)
+    );
+
+    return allCombinations.map((combination) => ({
+      meals: {
+        breakfast: this.formatMeal(combination.breakfast),
+        lunch: this.formatMeal(combination.lunch),
+        dinner: this.formatMeal(combination.dinner),
+      },
+      totals: {
+        calories: combination.totalCalories,
+        squirrels: combination.totalSquirrels,
+        fats: combination.totalFats,
+        carbohydrates: combination.totalCarbohydrates,
+      },
+    }));
+  }
+
+  private async getMealsByType(type: EatingType) {
+    const maels = await this.healthyEatingRepository.findAll({
+      where: { eatingType: type },
+    });
+
+    return maels;
+  }
+
+  private formatMeal({ dataValues }: HealthyEating) {
+    return {
+      id: dataValues.id,
+      title: dataValues.title,
+      calories: dataValues.kcal,
+      compound: dataValues.compound,
+      image: dataValues.image,
+      price: dataValues.price,
+      nutrients: {
+        squirrels: dataValues.squirrels,
+        fats: dataValues.fats,
+        carbohydrates: dataValues.carbohydrates,
+      },
+    };
   }
 }

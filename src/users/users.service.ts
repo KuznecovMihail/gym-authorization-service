@@ -15,6 +15,7 @@ import { RolesEnum } from "src/enum/Roles";
 import { UserRoles } from "src/user-role/user-role-model";
 import { UpdateUserDto } from "./dto/update-user-dto";
 import { UserRoleService } from "src/user-role/user-role.service";
+import { Sex } from "src/enum/Sex";
 
 @Injectable()
 export class UsersService {
@@ -67,7 +68,13 @@ export class UsersService {
   }
 
   async addRole(dto: AddRoleDto) {
-    const user = await this.userRepository.findByPk(dto.id);
+    const user = await this.userRepository.findByPk(dto.id, {
+      include: [
+        {
+          through: { attributes: [] },
+        },
+      ],
+    });
     const role = await this.rolesService.getRoleByValue({ value: dto.value });
     if (user && role) {
       await user.$add("role", role.dataValues.id);
@@ -145,6 +152,14 @@ export class UsersService {
       height: dataValues.height,
       weight: dataValues.weight,
       age: dataValues.age,
+      kalNorm: this.calculateKal(dataValues),
     };
+  }
+  calculateKal({ sex, height, weight, age }: User | ViewUserDto) {
+    if (!sex || !height || !weight || !age) return null;
+    if (sex === Sex.MALE)
+      return 66.5 + 13.75 * weight + 5.003 * height + 6.775 * age;
+    if (sex === Sex.FEMALE)
+      return 655.1 + 9.563 * weight + 1.85 * height + 4.676 * age;
   }
 }
