@@ -5,7 +5,7 @@ import { ConfigModule } from "@nestjs/config";
 import { User } from "./users/user.model";
 import { RolesModule } from "./roles/roles.module";
 import { Role } from "./roles/roles.model";
-import { UserRoles } from "./roles/user-role-model";
+
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { AuthModule } from "./auth/auth.module";
@@ -14,8 +14,10 @@ import { PostsModule } from "./posts/posts.module";
 import { Post } from "./posts/post.model";
 import { FilesModule } from "./files/files.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { HealthyEatingModule } from './healthy-eating/healthy-eating.module';
+import { HealthyEatingModule } from "./healthy-eating/healthy-eating.module";
+import { UserRoleModule } from "./user-role/user-role.module";
 import * as path from "path";
+import { UserRoles } from "./user-role/user-role-model";
 
 @Module({
   controllers: [AuthController],
@@ -49,6 +51,7 @@ import * as path from "path";
       rootPath: path.resolve(__dirname, "static"),
     }),
     HealthyEatingModule,
+    UserRoleModule,
   ],
 })
 export class AppModule {}

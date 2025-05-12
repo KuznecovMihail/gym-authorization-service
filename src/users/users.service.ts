@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { User } from "./user.model";
 import { CreateUserDto } from "./dto/create-user-dto";
 import { InjectModel } from "@nestjs/sequelize";
@@ -7,11 +12,16 @@ import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
 import { RolesEnum } from "src/enum/Roles";
 
+import { UserRoles } from "src/user-role/user-role-model";
+import { UpdateUserDto } from "./dto/update-user-dto";
+import { UserRoleService } from "src/user-role/user-role.service";
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userRepository: typeof User,
-    private rolesService: RolesService
+    private rolesService: RolesService,
+    private userRolesService: UserRoleService
   ) {}
 
   async createUser(dto: CreateUserDto) {
@@ -19,6 +29,7 @@ export class UsersService {
     const role = await this.rolesService.getRoleByValue({
       value: RolesEnum.USER,
     });
+    if (!role) throw new NotFoundException("Role not found");
     if (role !== null) {
       await user.$set("roles", [role.id]);
       user.dataValues.roles = [role.dataValues];
@@ -82,6 +93,44 @@ export class UsersService {
     return token;
   }
 
+  async updateUser(id: number, updateDto: UpdateUserDto) {
+    const user = await this.userRepository.findByPk(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const { roles, ...data } = updateDto;
+
+    await user.update(data);
+
+    if (!!roles?.length) {
+      await this.updateUserRoles(user, roles);
+    }
+  }
+
+  private async updateUserRoles(user: User, roles: RolesEnum[]): Promise<void> {
+    const roleInstances = await Promise.all(
+      roles.map((value) => this.rolesService.getRoleByValue({ value }))
+    );
+
+    if (roleInstances.some((role) => !role)) {
+      const missingRoles = roles.filter((_, i) => !roleInstances[i]);
+      throw new NotFoundException(
+        `Роли ${missingRoles.join(", ")} не существуют`
+      );
+    }
+
+    const rolesId = roleInstances
+      .map((el) => el?.id)
+      .filter((el) => el !== undefined);
+
+    if (!rolesId.length) {
+      throw new NotFoundException("Пользователь или роль не найдены");
+    }
+
+    await user.$set("roles", rolesId);
+  }
+
   private transformUser(user: User | null): ViewUserDto | null {
     if (!user) return null;
     const { dataValues } = user;
@@ -92,6 +141,10 @@ export class UsersService {
       id: dataValues.id,
       email: dataValues.email,
       roles: roleValues,
+      sex: dataValues.sex,
+      height: dataValues.height,
+      weight: dataValues.weight,
+      age: dataValues.age,
     };
   }
 }

@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -16,6 +18,7 @@ import { RolesGuard } from "src/auth/roles.guard";
 import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
 import { RolesEnum } from "src/enum/Roles";
+import { UpdateUserDto } from "./dto/update-user-dto";
 
 @ApiTags("Пользователи")
 @Controller("users")
@@ -53,5 +56,14 @@ export class UsersController {
   @Post("/role")
   addRole(@Body() dto: AddRoleDto) {
     return this.userServise.addRole(dto);
+  }
+
+  @ApiOperation({ summary: "Редактировать пользователя" })
+  @Patch(":id")
+  async update(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() updateDto: UpdateUserDto
+  ) {
+    return this.userServise.updateUser(id, updateDto);
   }
 }

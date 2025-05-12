@@ -7,11 +7,16 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
+import { Role } from "src/roles/roles.model";
 import { User } from "src/users/user.model";
-import { Role } from "./roles.model";
+
+interface UserRoleCreationAttribute {
+  roleId: number;
+  userId: number;
+}
 
 @Table({ tableName: "userRoles", createdAt: false, updatedAt: false })
-export class UserRoles extends Model<UserRoles> {
+export class UserRoles extends Model<UserRoles, UserRoleCreationAttribute> {
   @Column({
     type: DataType.INTEGER,
     unique: true,

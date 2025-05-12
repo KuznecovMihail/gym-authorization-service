@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsEnum, IsInt, Max, Min } from "class-validator";
 import {
   BelongsToMany,
   Column,
@@ -7,9 +8,10 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
+import { Sex } from "src/enum/Sex";
 import { Post } from "src/posts/post.model";
 import { Role } from "src/roles/roles.model";
-import { UserRoles } from "src/roles/user-role-model";
+import { UserRoles } from "src/user-role/user-role-model";
 
 interface UserCreationAttribute {
   email: string;
@@ -42,6 +44,48 @@ export class User extends Model<User, UserCreationAttribute> {
   })
   @Column({ type: DataType.STRING, allowNull: true })
   refreshToken: string | null;
+
+  @ApiProperty({
+    example: "FEMALE",
+    description: "Пол пользователя",
+    enum: Sex,
+  })
+  @Column({
+    type: DataType.ENUM(...Object.values(Sex)),
+    allowNull: true,
+  })
+  @IsEnum(Sex)
+  sex: Sex;
+
+  @ApiProperty({
+    example: 165,
+    description: "Рост в см",
+    minimum: 50,
+    maximum: 250,
+  })
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  height: number;
+
+  @ApiProperty({
+    example: 75,
+    description: "Вес в кг",
+    minimum: 20,
+    maximum: 300,
+  })
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  weight: number;
+
+  @ApiProperty({
+    example: 18,
+    description: "Возраст",
+    minimum: 12,
+    maximum: 120,
+  })
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  age: number;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  avatar: string;
 
   @BelongsToMany(() => Role, () => UserRoles)
   roles: Role[];

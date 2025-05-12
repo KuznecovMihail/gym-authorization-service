@@ -79,7 +79,7 @@ export class AuthService {
 
   private async generateTokens(user: User) {
     const roles = user.dataValues.roles;
-    const roleValues = roles.map((role) => role.dataValues.value);
+    const roleValues = roles.map((role) => role.value);
     const payload = {
       email: user.dataValues.email,
       id: user.dataValues.id,
