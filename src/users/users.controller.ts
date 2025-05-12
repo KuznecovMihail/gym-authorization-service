@@ -19,6 +19,7 @@ import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
 import { RolesEnum } from "src/enum/Roles";
 import { UpdateUserDto } from "./dto/update-user-dto";
+import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
 
 @ApiTags("Пользователи")
 @Controller("users")
@@ -37,6 +38,7 @@ export class UsersController {
   @ApiResponse({ status: 200, type: [User] })
   @Roles(RolesEnum.MANAGER)
   @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Get()
   getAll() {
     return this.userServise.getAllUsers();
@@ -51,8 +53,8 @@ export class UsersController {
 
   @ApiOperation({ summary: "Выдача ролей" })
   @ApiResponse({ status: 200 })
-  // @Roles(RolesEnum.MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesEnum.MANAGER)
+  @UseGuards(RolesGuard)
   @Post("/role")
   addRole(@Body() dto: AddRoleDto) {
     return this.userServise.addRole(dto);
