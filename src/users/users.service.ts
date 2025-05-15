@@ -16,13 +16,14 @@ import { UserRoles } from "src/user-role/user-role-model";
 import { UpdateUserDto } from "./dto/update-user-dto";
 import { UserRoleService } from "src/user-role/user-role.service";
 import { Sex } from "src/enum/Sex";
+import { FilesService } from "src/files/files.service";
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userRepository: typeof User,
     private rolesService: RolesService,
-    private userRolesService: UserRoleService
+    private filesService: FilesService
   ) {}
 
   async createUser(dto: CreateUserDto) {
@@ -100,15 +101,16 @@ export class UsersService {
     return token;
   }
 
-  async updateUser(id: number, updateDto: UpdateUserDto) {
+  async updateUser(id: number, updateDto: UpdateUserDto, avatar: any) {
     const user = await this.userRepository.findByPk(id);
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
+    const fileName = await this.filesService.createFile(avatar);
     const { roles, ...data } = updateDto;
 
-    await user.update(data);
+    await user.update({ ...data, avatar: fileName });
 
     if (!!roles?.length) {
       await this.updateUserRoles(user, roles);
@@ -153,6 +155,7 @@ export class UsersService {
       weight: dataValues.weight,
       age: dataValues.age,
       kalNorm: this.calculateKal(dataValues),
+      avatar: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${dataValues.avatar}`,
     };
   }
   calculateKal({ sex, height, weight, age }: User | ViewUserDto) {

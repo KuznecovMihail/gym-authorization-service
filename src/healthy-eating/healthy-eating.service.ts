@@ -37,7 +37,7 @@ export class HealthyEatingService {
       fats: item.fats,
       carbohydrates: item.carbohydrates,
       price: item.price,
-      image: item.image,
+      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${item.image}`,
     };
   }
 
@@ -61,6 +61,7 @@ export class HealthyEatingService {
   async findAll() {
     const healthyEating = await this.healthyEatingRepository.findAll({
       include: { all: true },
+      order: [["id", "DESC"]],
     });
 
     const mappedData = healthyEating.map((el) =>
@@ -195,7 +196,7 @@ export class HealthyEatingService {
       title: dataValues.title,
       calories: dataValues.kcal,
       compound: dataValues.compound,
-      image: dataValues.image,
+      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${dataValues.image}`,
       price: dataValues.price,
       nutrients: {
         squirrels: dataValues.squirrels,

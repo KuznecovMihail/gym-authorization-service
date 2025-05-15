@@ -6,7 +6,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   UsePipes,
 } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user-dto";
@@ -20,22 +22,15 @@ import { ViewUserDto } from "./dto/view-user-dto";
 import { RolesEnum } from "src/enum/Roles";
 import { UpdateUserDto } from "./dto/update-user-dto";
 import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @ApiTags("Пользователи")
 @Controller("users")
 export class UsersController {
   constructor(private userServise: UsersService) {}
-  @ApiOperation({ summary: "Создать пользователя" })
-  @ApiResponse({ status: 200, type: User })
-  @Roles(RolesEnum.MANAGER)
-  @UseGuards(RolesGuard)
-  @Post()
-  create(@Body() userDto: CreateUserDto) {
-    return this.userServise.createUser(userDto);
-  }
 
   @ApiOperation({ summary: "Получить всех пользователей" })
-  @ApiResponse({ status: 200, type: [User] })
+  @ApiResponse({ status: 200, type: [ViewUserDto] })
   @Roles(RolesEnum.MANAGER)
   @UseGuards(RolesGuard)
   @UseGuards(JwtAuthGuard)
@@ -61,11 +56,13 @@ export class UsersController {
   }
 
   @ApiOperation({ summary: "Редактировать пользователя" })
+  @UseInterceptors(FileInterceptor("avatar"))
   @Patch(":id")
   async update(
     @Param("id", ParseIntPipe) id: number,
-    @Body() updateDto: UpdateUserDto
+    @Body() updateDto: UpdateUserDto,
+    @UploadedFile() avatar
   ) {
-    return this.userServise.updateUser(id, updateDto);
+    return this.userServise.updateUser(id, updateDto, avatar);
   }
 }

@@ -64,4 +64,7 @@ export class ViewUserDto {
   })
   @IsInt()
   kalNorm?: number | null;
+
+  @ApiProperty({ example: "uuid", description: "файл" })
+  readonly avatar: string;
 }
