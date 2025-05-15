@@ -28,9 +28,9 @@ import { MealPlanResponseDto } from "./dto/meal-plan-response-dto";
 export class HealthyEatingController {
   constructor(private readonly healthyEatingService: HealthyEatingService) {}
 
-  @UseInterceptors(FileInterceptor("image"))
   @ApiOperation({ summary: "Создать продукта" })
   @ApiResponse({ status: 200, type: HealthyEating })
+  @UseInterceptors(FileInterceptor("image"))
   @Post()
   create(
     @Body() createHealthyEatingDto: CreateHealthyEatingDto,
@@ -54,11 +54,13 @@ export class HealthyEatingController {
 
   @ApiOperation({ summary: "Редактировать продукт" })
   @Patch(":id")
+  @UseInterceptors(FileInterceptor("image"))
   async update(
     @Param("id", ParseIntPipe) id: number,
-    @Body() updateDto: UpdateHealthyEatingDto
+    @Body() updateDto: UpdateHealthyEatingDto,
+    @UploadedFile() image
   ) {
-    return this.healthyEatingService.update(id, updateDto);
+    return this.healthyEatingService.update(id, updateDto, image);
   }
 
   @ApiOperation({ summary: "Удалить продукт" })

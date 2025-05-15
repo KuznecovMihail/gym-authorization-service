@@ -84,13 +84,14 @@ export class HealthyEatingService {
     return this.transformHyEatingData(healthyEating);
   }
 
-  async update(id: number, updateDto: UpdateHealthyEatingDto) {
+  async update(id: number, updateDto: UpdateHealthyEatingDto, image: any) {
     const record = await this.healthyEatingRepository.findByPk(id);
 
     if (!record) {
       throw new NotFoundException(`Запись с id ${id} не найдена`);
     }
-    await record.update(updateDto);
+    const fileName = await this.filesService.createFile(image);
+    await record.update({ ...updateDto, image: fileName });
   }
 
   async remove(id: number) {
