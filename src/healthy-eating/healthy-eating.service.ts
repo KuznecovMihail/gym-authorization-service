@@ -12,6 +12,8 @@ import { FilesService } from "src/files/files.service";
 import { UsersService } from "src/users/users.service";
 import { EatingType } from "src/enum/EatingType";
 import { JwtService } from "@nestjs/jwt";
+import { BasketService } from "src/basket/basket.service";
+import { AddToBasketDto } from "./dto/add-to-basket-dto";
 
 interface MealPlan {
   breakfast: HealthyEating;
@@ -25,6 +27,15 @@ interface MealPlan {
 
 @Injectable()
 export class HealthyEatingService {
+  constructor(
+    @InjectModel(HealthyEating)
+    private healthyEatingRepository: typeof HealthyEating,
+    private filesService: FilesService,
+    private usersService: UsersService,
+    private jwtService: JwtService,
+    private basketService: BasketService
+  ) {}
+
   private transformHyEatingData(data: HealthyEating | null) {
     if (!data) return;
     const { dataValues: item } = data;
@@ -41,14 +52,6 @@ export class HealthyEatingService {
       image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${item.image}`,
     };
   }
-
-  constructor(
-    @InjectModel(HealthyEating)
-    private healthyEatingRepository: typeof HealthyEating,
-    private filesService: FilesService,
-    private usersService: UsersService,
-    private jwtService: JwtService
-  ) {}
 
   async create(
     createHealthyEatingDto: CreateHealthyEatingDto,
@@ -201,7 +204,20 @@ export class HealthyEatingService {
     return maels;
   }
 
-  private formatMeal({ dataValues }: HealthyEating) {
+  async addMealIntoBasket({ itemId, quantity }: AddToBasketDto, headers: any) {
+    const item = await this.healthyEatingRepository.findByPk(itemId);
+    if (!item) {
+      throw new NotFoundException("Продукт с таким id не найден");
+    }
+    const { authorization } = headers;
+    const token = authorization.replace("Bearer ", "");
+    const payload = this.jwtService.decode(token);
+    const basket = await this.basketService.findOne(payload.id);
+
+    basket?.$set("items", itemId, { through: { quantity } });
+  }
+
+  formatMeal({ dataValues }: HealthyEating) {
     return {
       id: dataValues.id,
       title: dataValues.title,

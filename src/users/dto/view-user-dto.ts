@@ -11,6 +11,15 @@ export class ViewUserDto {
   @ApiProperty({ example: "user@mail.ru", description: "email" })
   email: string;
 
+  @ApiProperty({ example: "Иван" })
+  firstName: string;
+
+  @ApiProperty({ example: "Иванович" })
+  middleName: string;
+
+  @ApiProperty({ example: "Иванов" })
+  lastName: string;
+
   @ApiProperty({
     example: [RolesEnum.MANAGER, RolesEnum.USER],
     description: "Массив ролей пользователя",
