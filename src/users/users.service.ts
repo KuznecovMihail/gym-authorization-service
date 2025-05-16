@@ -12,9 +12,7 @@ import { AddRoleDto } from "./dto/add-role-dto";
 import { ViewUserDto } from "./dto/view-user-dto";
 import { RolesEnum } from "src/enum/Roles";
 
-import { UserRoles } from "src/user-role/user-role-model";
 import { UpdateUserDto } from "./dto/update-user-dto";
-import { UserRoleService } from "src/user-role/user-role.service";
 import { Sex } from "src/enum/Sex";
 import { FilesService } from "src/files/files.service";
 
@@ -159,6 +157,9 @@ export class UsersService {
       weight: dataValues.weight,
       age: dataValues.age,
       kalNorm: this.calculateKal(dataValues),
+      firstName: dataValues.firstName,
+      middleName: dataValues.middleName,
+      lastName: dataValues.lastName,
       avatar: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${dataValues.avatar}`,
     };
   }

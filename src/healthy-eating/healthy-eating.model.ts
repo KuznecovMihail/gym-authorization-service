@@ -1,11 +1,14 @@
 import {
   BelongsTo,
+  BelongsToMany,
   Column,
   DataType,
   ForeignKey,
   Model,
   Table,
 } from "sequelize-typescript";
+import { BasketItems } from "src/basket/basket-items.model";
+import { Basket } from "src/basket/basket.model";
 import { EatingType } from "src/enum/EatingType";
 import { User } from "src/users/user.model";
 
@@ -73,4 +76,7 @@ export class HealthyEating extends Model<
 
   @BelongsTo(() => User)
   declare author: User;
+
+  @BelongsToMany(() => Basket, () => BasketItems)
+  declare basket: Basket[];
 }

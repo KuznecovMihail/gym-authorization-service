@@ -28,6 +28,7 @@ import { RolesEnum } from "src/enum/Roles";
 import { Roles } from "src/auth/roles-auth.decorator";
 import { RolesGuard } from "src/auth/roles.guard";
 import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
+import { AddToBasketDto } from "./dto/add-to-basket-dto";
 
 @ApiTags("Продукты")
 @Controller("healthyEating")
@@ -94,5 +95,13 @@ export class HealthyEatingController {
   @Get("/user/:id")
   getHealthyEatingForUser(@Param("id") id: string) {
     return this.healthyEatingService.getForUser(+id);
+  }
+
+  @ApiOperation({ summary: "Добавить продукт в корзину" })
+  @ApiResponse({ status: 200 })
+  @UseGuards(JwtAuthGuard)
+  @Post("/basket")
+  addToBasket(@Body() dto: AddToBasketDto, @Headers() headers: any) {
+    return this.healthyEatingService.addMealIntoBasket(dto, headers);
   }
 }

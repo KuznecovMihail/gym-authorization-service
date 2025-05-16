@@ -11,12 +11,14 @@ import * as bcrypt from "bcryptjs";
 import { User } from "src/users/user.model";
 import { refreshTokenDto } from "./dto/refresh-token-dto";
 import { LogoutDto } from "./dto/logout-dto";
+import { BasketService } from "src/basket/basket.service";
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private basketService: BasketService
   ) {}
 
   async login(userDto: CreateUserDto) {
@@ -52,7 +54,6 @@ export class AuthService {
       const accessToken = this.jwtService.sign(newPayload, {
         expiresIn: "15m",
       });
-
       return { accessToken, refreshToken };
     } catch (error) {
       console.error("error", error);
@@ -62,6 +63,7 @@ export class AuthService {
 
   async regestration(userDto: CreateUserDto) {
     const candidate = await this.usersService.getUsersByEmail(userDto.email);
+    console.log("Получен пользователь по email");
     if (candidate) {
       throw new HttpException(
         "Пользователь с таким email существует",
@@ -70,10 +72,14 @@ export class AuthService {
     }
 
     const hashPassword = await bcrypt.hash(userDto.password, 5);
+    console.log("Пароль захэширован");
     const user = await this.usersService.createUser({
       ...userDto,
       password: hashPassword,
     });
+    console.log("Пользователь создан");
+    this.basketService.createBasket(user.id);
+    console.log("Корзина создана");
     return this.generateTokens(user);
   }
 

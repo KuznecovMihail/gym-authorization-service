@@ -16,6 +16,11 @@ import { HealthyEatingModule } from "./healthy-eating/healthy-eating.module";
 import { UserRoleModule } from "./user-role/user-role.module";
 import * as path from "path";
 import { UserRoles } from "./user-role/user-role-model";
+import { BasketModule } from "./basket/basket.module";
+import { BasketUser } from "./basket/basket-user.model";
+import { Basket } from "./basket/basket.model";
+import { BasketItems } from "./basket/basket-items.model";
+import { HealthyEating } from "./healthy-eating/healthy-eating.model";
 
 @Module({
   controllers: [AuthController],
@@ -31,7 +36,15 @@ import { UserRoles } from "./user-role/user-role-model";
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      models: [User, Role, UserRoles],
+      models: [
+        User,
+        Role,
+        UserRoles,
+        BasketUser,
+        Basket,
+        BasketItems,
+        HealthyEating,
+      ],
       autoLoadModels: true,
     }),
     UsersModule,
@@ -49,6 +62,7 @@ import { UserRoles } from "./user-role/user-role-model";
     }),
     HealthyEatingModule,
     UserRoleModule,
+    BasketModule,
   ],
 })
 export class AppModule {}

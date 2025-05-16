@@ -4,10 +4,11 @@ import {
   BelongsToMany,
   Column,
   DataType,
-  HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
+import { BasketUser } from "src/basket/basket-user.model";
+import { Basket } from "src/basket/basket.model";
 import { Sex } from "src/enum/Sex";
 import { Role } from "src/roles/roles.model";
 import { UserRoles } from "src/user-role/user-role-model";
@@ -28,7 +29,19 @@ export class User extends Model<User, UserCreationAttribute> {
   })
   declare id: number;
 
-  @ApiProperty({ example: "user@mail.ru", description: "email" })
+  @ApiProperty({ example: "Иван" })
+  @Column({ type: DataType.STRING, unique: true, allowNull: true })
+  declare firstName: string;
+
+  @ApiProperty({ example: "Иванович" })
+  @Column({ type: DataType.STRING, unique: true, allowNull: true })
+  declare middleName: string;
+
+  @ApiProperty({ example: "Иванов" })
+  @Column({ type: DataType.STRING, unique: true, allowNull: true })
+  declare lastName: string;
+
+  @ApiProperty({ example: "user@mail.ru" })
   @Column({ type: DataType.STRING, unique: true, allowNull: false })
   declare email: string;
 
@@ -89,6 +102,6 @@ export class User extends Model<User, UserCreationAttribute> {
   @BelongsToMany(() => Role, () => UserRoles)
   declare roles: Role[];
 
-  // @HasMany(() => Post)
-  // posts: Post[];
+  @BelongsToMany(() => Basket, () => BasketUser)
+  declare basket: Basket[];
 }
