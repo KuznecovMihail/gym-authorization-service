@@ -40,10 +40,10 @@ export class CreateHealthyEatingDto {
   @IsNotEmpty({ message: "Укажите цену" })
   readonly price: number;
 
-  @ApiProperty({ example: 1, description: "ID пользователя" })
+  // @ApiProperty({ example: 1, description: "ID пользователя" })
   //@IsInt({ message: "Должно быть целым числом" })
-  @IsNotEmpty({ message: "Не указан id пользователя" })
-  readonly userId: number;
+  // @IsNotEmpty({ message: "Не указан id пользователя" })
+  // readonly userId: number;
 
   @ApiProperty({ example: "uuid", description: "файл" })
   readonly image: string;

@@ -107,10 +107,14 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    const fileName = await this.filesService.createFile(avatar);
+    const fileName = updateDto.avatar
+      ? await this.filesService.createFile(avatar)
+      : "";
     const { roles, ...data } = updateDto;
 
-    await user.update({ ...data, avatar: fileName });
+    const updateData = updateDto.avatar ? { ...data, avatar: fileName } : data;
+
+    await user.update(updateData);
 
     if (!!roles?.length) {
       await this.updateUserRoles(user, roles);

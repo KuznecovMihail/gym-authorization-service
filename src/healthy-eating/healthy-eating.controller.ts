@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   UploadedFile,
   ParseIntPipe,
+  Headers,
+  UseGuards,
 } from "@nestjs/common";
 import { HealthyEatingService } from "./healthy-eating.service";
 import { CreateHealthyEatingDto } from "./dto/create-healthy-eating.dto";
@@ -22,21 +24,33 @@ import {
 } from "@nestjs/swagger";
 import { HealthyEating } from "./healthy-eating.model";
 import { MealPlanResponseDto } from "./dto/meal-plan-response-dto";
+import { RolesEnum } from "src/enum/Roles";
+import { Roles } from "src/auth/roles-auth.decorator";
+import { RolesGuard } from "src/auth/roles.guard";
+import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
 
 @ApiTags("Продукты")
 @Controller("healthyEating")
 export class HealthyEatingController {
   constructor(private readonly healthyEatingService: HealthyEatingService) {}
 
-  @ApiOperation({ summary: "Создать продукта" })
+  @ApiOperation({ summary: "Создать продукт" })
   @ApiResponse({ status: 200, type: HealthyEating })
+  @Roles(RolesEnum.MANAGER)
+  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor("image"))
   @Post()
   create(
     @Body() createHealthyEatingDto: CreateHealthyEatingDto,
-    @UploadedFile() image
+    @UploadedFile() image,
+    @Headers() headers: any
   ) {
-    return this.healthyEatingService.create(createHealthyEatingDto, image);
+    return this.healthyEatingService.create(
+      createHealthyEatingDto,
+      image,
+      headers
+    );
   }
 
   @ApiOperation({ summary: "Получение всех продукта" })
@@ -54,6 +68,9 @@ export class HealthyEatingController {
 
   @ApiOperation({ summary: "Редактировать продукт" })
   @Patch(":id")
+  @Roles(RolesEnum.MANAGER)
+  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor("image"))
   async update(
     @Param("id", ParseIntPipe) id: number,
@@ -64,6 +81,9 @@ export class HealthyEatingController {
   }
 
   @ApiOperation({ summary: "Удалить продукт" })
+  @Roles(RolesEnum.MANAGER)
+  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete("/:id")
   remove(@Param("id") id: string) {
     return this.healthyEatingService.remove(+id);

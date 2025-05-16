@@ -11,6 +11,7 @@ import { HealthyEating } from "./healthy-eating.model";
 import { FilesService } from "src/files/files.service";
 import { UsersService } from "src/users/users.service";
 import { EatingType } from "src/enum/EatingType";
+import { JwtService } from "@nestjs/jwt";
 
 interface MealPlan {
   breakfast: HealthyEating;
@@ -45,13 +46,22 @@ export class HealthyEatingService {
     @InjectModel(HealthyEating)
     private healthyEatingRepository: typeof HealthyEating,
     private filesService: FilesService,
-    private usersService: UsersService
+    private usersService: UsersService,
+    private jwtService: JwtService
   ) {}
 
-  async create(createHealthyEatingDto: CreateHealthyEatingDto, image: any) {
+  async create(
+    createHealthyEatingDto: CreateHealthyEatingDto,
+    image: any,
+    headers: any
+  ) {
+    const { authorization } = headers;
+    const token = authorization.replace("Bearer ", "");
+    const payload = this.jwtService.decode(token);
     const fileName = await this.filesService.createFile(image);
     const user = await this.healthyEatingRepository.create({
       ...createHealthyEatingDto,
+      userId: payload.id,
       image: fileName,
     });
 
