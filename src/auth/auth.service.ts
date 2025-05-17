@@ -2,6 +2,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
@@ -12,7 +13,6 @@ import { User } from "src/users/user.model";
 import { refreshTokenDto } from "./dto/refresh-token-dto";
 import { LogoutDto } from "./dto/logout-dto";
 import { BasketService } from "src/basket/basket.service";
-import { NotFoundError } from "rxjs";
 
 @Injectable()
 export class AuthService {
@@ -31,7 +31,7 @@ export class AuthService {
     const token = authorization.replace("Bearer ", "");
     const { id } = this.jwtService.decode(token);
     if (!id) {
-      throw new NotFoundError("Пользователь с таким id не существует");
+      throw new NotFoundException("Пользователь с таким id не существует");
     }
     await this.usersService.saveRefreshToken(id, null);
   }
