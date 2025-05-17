@@ -21,10 +21,12 @@ import { BasketUser } from "./basket/basket-user.model";
 import { Basket } from "./basket/basket.model";
 import { BasketItems } from "./basket/basket-items.model";
 import { HealthyEating } from "./healthy-eating/healthy-eating.model";
+import { FormatterService } from './formatter/formatter.service';
+import { FormatterModule } from './formatter/formatter.module';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, FormatterService],
   imports: [
     ConfigModule.forRoot({
       envFilePath: `.${process.env.NODE_ENV}.env`,
@@ -63,6 +65,7 @@ import { HealthyEating } from "./healthy-eating/healthy-eating.model";
     HealthyEatingModule,
     UserRoleModule,
     BasketModule,
+    FormatterModule,
   ],
 })
 export class AppModule {}

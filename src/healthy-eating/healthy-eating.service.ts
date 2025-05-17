@@ -14,6 +14,7 @@ import { EatingType } from "src/enum/EatingType";
 import { JwtService } from "@nestjs/jwt";
 import { BasketService } from "src/basket/basket.service";
 import { AddToBasketDto } from "./dto/add-to-basket-dto";
+import { FormatterService } from "src/formatter/formatter.service";
 
 interface MealPlan {
   breakfast: HealthyEating;
@@ -33,25 +34,26 @@ export class HealthyEatingService {
     private filesService: FilesService,
     private usersService: UsersService,
     private jwtService: JwtService,
-    private basketService: BasketService
+    private basketService: BasketService,
+    private formatter: FormatterService
   ) {}
 
-  private transformHyEatingData(data: HealthyEating | null) {
-    if (!data) return;
-    const { dataValues: item } = data;
+  // private transformHyEatingData(data: HealthyEating | null) {
+  //   if (!data) return;
+  //   const { dataValues: item } = data;
 
-    return {
-      id: item.id,
-      title: item.title,
-      compound: item.compound,
-      kcal: item.kcal,
-      squirrels: item.squirrels,
-      fats: item.fats,
-      carbohydrates: item.carbohydrates,
-      price: item.price,
-      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${item.image}`,
-    };
-  }
+  //   return {
+  //     id: item.id,
+  //     title: item.title,
+  //     compound: item.compound,
+  //     kcal: item.kcal,
+  //     squirrels: item.squirrels,
+  //     fats: item.fats,
+  //     carbohydrates: item.carbohydrates,
+  //     price: item.price,
+  //     image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${item.image}`,
+  //   };
+  // }
 
   async create(
     createHealthyEatingDto: CreateHealthyEatingDto,
@@ -77,9 +79,7 @@ export class HealthyEatingService {
       order: [["id", "DESC"]],
     });
 
-    const mappedData = healthyEating.map((el) =>
-      this.transformHyEatingData(el)
-    );
+    const mappedData = healthyEating.map((el) => this.formatter.formatMeal(el));
 
     return mappedData;
   }
@@ -94,7 +94,7 @@ export class HealthyEatingService {
       );
     }
 
-    return this.transformHyEatingData(healthyEating);
+    return this.formatter.formatMeal(healthyEating);
   }
 
   async update(id: number, updateDto: UpdateHealthyEatingDto, image: any) {
@@ -103,7 +103,9 @@ export class HealthyEatingService {
     if (!record) {
       throw new NotFoundException(`Запись с id ${id} не найдена`);
     }
-    const fileName = await this.filesService.createFile(image);
+    const fileName = image
+      ? await this.filesService.createFile(image)
+      : undefined;
     await record.update({ ...updateDto, image: fileName });
   }
 
@@ -183,9 +185,9 @@ export class HealthyEatingService {
 
     return allCombinations.map((combination) => ({
       meals: {
-        breakfast: this.formatMeal(combination.breakfast),
-        lunch: this.formatMeal(combination.lunch),
-        dinner: this.formatMeal(combination.dinner),
+        breakfast: this.formatter.formatMeal(combination.breakfast),
+        lunch: this.formatter.formatMeal(combination.lunch),
+        dinner: this.formatter.formatMeal(combination.dinner),
       },
       totals: {
         calories: combination.totalCalories,
@@ -209,27 +211,10 @@ export class HealthyEatingService {
     if (!item) {
       throw new NotFoundException("Продукт с таким id не найден");
     }
-    const { authorization } = headers;
-    const token = authorization.replace("Bearer ", "");
-    const payload = this.jwtService.decode(token);
-    const basket = await this.basketService.findOne(payload.id);
-
-    basket?.$set("items", itemId, { through: { quantity } });
-  }
-
-  formatMeal({ dataValues }: HealthyEating) {
-    return {
-      id: dataValues.id,
-      title: dataValues.title,
-      calories: dataValues.kcal,
-      compound: dataValues.compound,
-      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${dataValues.image}`,
-      price: dataValues.price,
-      nutrients: {
-        squirrels: dataValues.squirrels,
-        fats: dataValues.fats,
-        carbohydrates: dataValues.carbohydrates,
-      },
-    };
+    const basket = await this.basketService.findOne(headers);
+    if (!basket) {
+      throw new NotFoundException("Корзина не найдена");
+    }
+    basket?.$add("items", itemId, { through: { quantity } });
   }
 }

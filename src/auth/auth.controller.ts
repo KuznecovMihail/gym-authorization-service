@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Headers, Post } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CreateUserDto } from "src/users/dto/create-user-dto";
 import { AuthService } from "./auth.service";
@@ -21,8 +21,8 @@ export class AuthController {
   @ApiOperation({ summary: "Выход" })
   @ApiResponse({ status: 201 })
   @Post("/logout")
-  logout(@Body() userId: LogoutDto) {
-    return this.authServise.logout(userId);
+  logout(@Headers() header: any) {
+    return this.authServise.logout(header);
   }
 
   @ApiOperation({ summary: "Регистрация" })

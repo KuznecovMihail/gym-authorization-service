@@ -1,8 +1,15 @@
 import { HealthyEatingService } from "./../healthy-eating/healthy-eating.service";
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Basket } from "./basket.model";
 import { BasketUser } from "./basket-user.model";
+import { FormatterService } from "src/formatter/formatter.service";
+import { JwtService } from "@nestjs/jwt";
 
 @Injectable()
 export class BasketService {
@@ -10,7 +17,9 @@ export class BasketService {
     @InjectModel(Basket)
     private basketRepository: typeof Basket,
     @InjectModel(BasketUser)
-    private basketUserRepository: typeof BasketUser
+    private basketUserRepository: typeof BasketUser,
+    private formatter: FormatterService,
+    private jwtService: JwtService
   ) {}
   async createBasket(userId: number) {
     try {
@@ -41,18 +50,41 @@ export class BasketService {
     }
   }
 
-  async getBaketItems(id: number) {
-    const basket = await this.findOne(id);
-    // const mappedData = basket
-    //   ? (await basket?.$get("items")).map((el) =>
-    //       this.healthyEatingService.formatMeal(el)
-    //     )
-    //   : [];
-    return basket;
+  async getBaketItems(headers: any) {
+    const basket = await this.findOne(headers);
+    if (!basket) {
+      throw new NotFoundException("basket не найден");
+    }
+    const mappedData = basket
+      ? (await basket.$get("items")).map((el) => ({
+          ...this.formatter.formatMeal(el),
+          quantity: el["BasketItems"].dataValues.quantity,
+        }))
+      : [];
+
+    return mappedData;
   }
 
-  async findOne(userId: number) {
-    const [basket] = (await this.getUserBaskets(userId)).map(
+  async deleteItem(itemId: number, headers: any) {
+    const basket = await this.findOne(headers);
+    if (!basket) {
+      throw new NotFoundException("basket не найден");
+    }
+    const [item] = await basket.$get("items", { where: { id: itemId } });
+    if (!item) {
+      throw new NotFoundException("Продукта с таким id не найдено");
+    }
+    basket.$remove("items", itemId);
+  }
+
+  async findOne(headers: any) {
+    const { authorization } = headers;
+    const token = authorization.replace("Bearer ", "");
+    const { id } = this.jwtService.decode(token);
+    if (!id) {
+      throw new NotFoundException("id не найден");
+    }
+    const [basket] = (await this.getUserBaskets(id)).map(
       async ({ dataValues: { baskeId } }) => {
         return await this.basketRepository.findOne({
           where: { id: baskeId, isActive: true },

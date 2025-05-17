@@ -1,4 +1,11 @@
-import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  UseGuards,
+} from "@nestjs/common";
 import { BasketService } from "./basket.service";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
@@ -10,8 +17,15 @@ export class BasketController {
 
   @ApiOperation({ summary: "Получить продукты из корзины по id пользователя" })
   @UseGuards(JwtAuthGuard)
-  @Get("/:id")
-  findOne(@Param("id") id: number) {
-    return this.basketService.getBaketItems(id);
+  @Get()
+  findOne(@Headers() headers: any) {
+    return this.basketService.getBaketItems(headers);
+  }
+
+  @ApiOperation({ summary: "Удалить продукт из корзины" })
+  @UseGuards(JwtAuthGuard)
+  @Delete("/:id")
+  delete(@Param("id") id: number, @Headers() headers: any) {
+    return this.basketService.deleteItem(id, headers);
   }
 }

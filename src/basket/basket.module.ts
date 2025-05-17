@@ -9,6 +9,7 @@ import { BasketUser } from "./basket-user.model";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule } from "@nestjs/config";
 import { HealthyEatingModule } from "src/healthy-eating/healthy-eating.module";
+import { FormatterModule } from "src/formatter/formatter.module";
 
 @Module({
   controllers: [BasketController],
@@ -17,6 +18,7 @@ import { HealthyEatingModule } from "src/healthy-eating/healthy-eating.module";
     ConfigModule.forRoot({
       envFilePath: `.${process.env.NODE_ENV}.env`,
     }),
+    FormatterModule,
     SequelizeModule.forFeature([Basket, BasketItems, User, BasketUser]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || "SECRET",
