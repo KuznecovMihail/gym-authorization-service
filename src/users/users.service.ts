@@ -25,11 +25,11 @@ export class UsersService {
   ) {}
 
   async createUser(dto: CreateUserDto) {
-    const user = await this.userRepository.create(dto);
     const role = await this.rolesService.getRoleByValue({
       value: RolesEnum.USER,
     });
     if (!role) throw new NotFoundException("Role not found");
+    const user = await this.userRepository.create(dto);
     if (role !== null) {
       await user.$set("roles", [role.id]);
       user.dataValues.roles = [role.dataValues];
