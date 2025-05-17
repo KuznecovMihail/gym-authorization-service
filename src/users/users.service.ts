@@ -104,13 +104,12 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-
-    const fileName = updateDto.avatar
-      ? await this.filesService.createFile(avatar)
-      : "";
+    console.log("avatar", avatar);
+    const fileName = avatar ? await this.filesService.createFile(avatar) : "";
+    console.log("fileName", fileName);
     const { roles, ...data } = updateDto;
 
-    const updateData = updateDto.avatar ? { ...data, avatar: fileName } : data;
+    const updateData = avatar ? { ...data, avatar: fileName } : data;
 
     await user.update(updateData);
 

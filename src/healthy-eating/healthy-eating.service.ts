@@ -15,6 +15,7 @@ import { JwtService } from "@nestjs/jwt";
 import { BasketService } from "src/basket/basket.service";
 import { AddToBasketDto } from "./dto/add-to-basket-dto";
 import { FormatterService } from "src/formatter/formatter.service";
+import { Op } from "sequelize";
 
 interface MealPlan {
   breakfast: HealthyEating;
@@ -128,84 +129,110 @@ export class HealthyEatingService {
         "Не заполнены обязательное поле",
         HttpStatus.BAD_REQUEST
       );
-    return this.getMealPlan(kal);
+    return this.getMealPlan(1050);
   }
 
   async getMealPlan(dailyCalories: number, tolerancePercentage: number = 10) {
     const tolerance = dailyCalories * (tolerancePercentage / 100);
-
     const minCalories = dailyCalories - tolerance;
     const maxCalories = dailyCalories + tolerance;
 
+    // Кешируем данные и предварительно фильтруем
     const [breakfasts, lunches, dinners] = await Promise.all([
-      this.getMealsByType(EatingType.BREAKFAST),
-      this.getMealsByType(EatingType.LUNCH),
-      this.getMealsByType(EatingType.DINNER),
+      this.getFilteredMeals(EatingType.BREAKFAST, minCalories, maxCalories),
+      this.getFilteredMeals(EatingType.LUNCH, minCalories, maxCalories),
+      this.getFilteredMeals(EatingType.DINNER, minCalories, maxCalories),
     ]);
 
-    const allCombinations: MealPlan[] = [];
+    // Ограничиваем количество вариантов для перебора
+    const MAX_PER_TYPE = 20; // Не более 20 вариантов каждого типа
+    const sampledBreakfasts = this.sampleArray(breakfasts, MAX_PER_TYPE);
+    const sampledLunches = this.sampleArray(lunches, MAX_PER_TYPE);
+    const sampledDinners = this.sampleArray(dinners, MAX_PER_TYPE);
 
-    for (const breakfast of breakfasts) {
-      for (const lunch of lunches) {
-        for (const dinner of dinners) {
-          const totalCalories =
-            breakfast.dataValues.kcal +
-            lunch.dataValues.kcal +
-            dinner.dataValues.kcal;
+    const results: MealPlan[] = [];
 
+    // Перебор с ранним выходом
+    for (const breakfast of sampledBreakfasts) {
+      for (const lunch of sampledLunches) {
+        const remainingCalories = maxCalories - breakfast.kcal - lunch.kcal;
+
+        // Быстрый поиск подходящих ужинов
+        const suitableDinners = sampledDinners.filter(
+          (dinner) =>
+            dinner.kcal >= remainingCalories - tolerance &&
+            dinner.kcal <= remainingCalories + tolerance
+        );
+
+        for (const dinner of suitableDinners) {
+          const totalCalories = breakfast.kcal + lunch.kcal + dinner.kcal;
           if (totalCalories >= minCalories && totalCalories <= maxCalories) {
-            allCombinations.push({
+            results.push({
               breakfast,
               lunch,
               dinner,
               totalCalories,
               totalSquirrels:
-                breakfast.dataValues.squirrels +
-                lunch.dataValues.squirrels +
-                dinner.dataValues.squirrels,
-              totalFats:
-                breakfast.dataValues.fats +
-                lunch.dataValues.fats +
-                dinner.dataValues.fats,
+                breakfast.squirrels + lunch.squirrels + dinner.squirrels,
+              totalFats: breakfast.fats + lunch.fats + dinner.fats,
               totalCarbohydrates:
-                breakfast.dataValues.carbohydrates +
-                lunch.dataValues.carbohydrates +
-                dinner.dataValues.carbohydrates,
+                breakfast.carbohydrates +
+                lunch.carbohydrates +
+                dinner.carbohydrates,
             });
+
+            // Ограничиваем количество результатов
+            if (results.length >= 50) break;
           }
         }
+        if (results.length >= 50) break;
       }
+      if (results.length >= 50) break;
     }
 
-    allCombinations.sort(
-      (a, b) =>
-        Math.abs(a.totalCalories - dailyCalories) -
-        Math.abs(b.totalCalories - dailyCalories)
-    );
-
-    return allCombinations.map((combination) => ({
-      meals: {
-        breakfast: this.formatter.formatMeal(combination.breakfast),
-        lunch: this.formatter.formatMeal(combination.lunch),
-        dinner: this.formatter.formatMeal(combination.dinner),
-      },
-      totals: {
-        calories: combination.totalCalories,
-        squirrels: combination.totalSquirrels,
-        fats: combination.totalFats,
-        carbohydrates: combination.totalCarbohydrates,
-      },
-    }));
+    // Сортировка и форматирование
+    return this.formatResults(results, dailyCalories);
   }
 
-  private async getMealsByType(type: EatingType) {
-    const maels = await this.healthyEatingRepository.findAll({
-      where: { eatingType: type },
+  private async getFilteredMeals(type: EatingType, min: number, max: number) {
+    return this.healthyEatingRepository.findAll({
+      where: {
+        eatingType: type,
+        kcal: {
+          [Op.between]: [min * 0.3, max * 0.5],
+        },
+      },
+      limit: 100,
     });
-
-    return maels;
+  }
+  private sampleArray(arr: any[], max: number) {
+    return arr.length > max
+      ? arr.sort(() => 0.5 - Math.random()).slice(0, max)
+      : arr;
   }
 
+  private formatResults(combinations: MealPlan[], targetCalories: number) {
+    return combinations
+      .sort(
+        (a, b) =>
+          Math.abs(a.totalCalories - targetCalories) -
+          Math.abs(b.totalCalories - targetCalories)
+      )
+      .slice(0, 10) // Возвращаем только 10 лучших вариантов
+      .map((combination) => ({
+        meals: {
+          breakfast: this.formatter.formatMeal(combination.breakfast),
+          lunch: this.formatter.formatMeal(combination.lunch),
+          dinner: this.formatter.formatMeal(combination.dinner),
+        },
+        totals: {
+          calories: combination.totalCalories,
+          squirrels: combination.totalSquirrels,
+          fats: combination.totalFats,
+          carbohydrates: combination.totalCarbohydrates,
+        },
+      }));
+  }
   async addMealIntoBasket({ itemId, quantity }: AddToBasketDto, headers: any) {
     const item = await this.healthyEatingRepository.findByPk(itemId);
     if (!item) {
