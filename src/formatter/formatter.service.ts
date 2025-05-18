@@ -1,21 +1,27 @@
 import { Injectable } from "@nestjs/common";
-import { HealthyEating } from "src/healthy-eating/healthy-eating.model";
+import { HealthyEatingDto } from "src/healthy-eating/dto/healthy-eating-dto";
+import { MealNutrientsDto } from "src/healthy-eating/dto/meal-nutrients-dto";
 
+export interface FormatMeal extends Partial<HealthyEatingDto> {
+  calories?: number;
+  nutrients?: MealNutrientsDto;
+}
 @Injectable()
 export class FormatterService {
-  formatMeal({ dataValues }: HealthyEating) {
+  formatMeal(data: HealthyEatingDto): FormatMeal {
     return {
-      id: dataValues.id,
-      title: dataValues.title,
-      calories: dataValues.kcal,
-      compound: dataValues.compound,
-      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${dataValues.image}`,
-      price: dataValues.price,
-      eatingType: dataValues.eatingType,
+      id: data.id,
+      title: data.title,
+      calories: data.kcal,
+      compound: data.compound,
+      image: `http://${process.env.POSTGRES_HOST}:${process.env.PORT}/${data.image}`,
+      price: data.price,
+      eatingType: data.eatingType,
+      inBasketQuantity: data.inBasketQuantity,
       nutrients: {
-        squirrels: dataValues.squirrels,
-        fats: dataValues.fats,
-        carbohydrates: dataValues.carbohydrates,
+        squirrels: data.squirrels,
+        fats: data.fats,
+        carbohydrates: data.carbohydrates,
       },
     };
   }

@@ -15,12 +15,14 @@ import { JwtService } from "@nestjs/jwt";
 import { BasketService } from "src/basket/basket.service";
 import { AddToBasketDto } from "./dto/add-to-basket-dto";
 import { FormatterService } from "src/formatter/formatter.service";
-import { Op } from "sequelize";
+import { Op, where } from "sequelize";
+
+import { HealthyEatingDto } from "./dto/healthy-eating-dto";
 
 interface MealPlan {
-  breakfast: HealthyEating;
-  lunch: HealthyEating;
-  dinner: HealthyEating;
+  breakfast: HealthyEatingDto;
+  lunch: HealthyEatingDto;
+  dinner: HealthyEatingDto;
   totalCalories: number;
   totalSquirrels: number;
   totalFats: number;
@@ -119,7 +121,7 @@ export class HealthyEatingService {
     await healthyEating.destroy();
   }
 
-  async getForUser(id: number) {
+  async getForUser(id: number, headers: any) {
     const user = await this.usersService.getUsersById(id);
     if (!user) throw new NotFoundException(`Запись с id ${id} не найдена`);
 
@@ -129,43 +131,63 @@ export class HealthyEatingService {
         "Не заполнены обязательное поле",
         HttpStatus.BAD_REQUEST
       );
-    return this.getMealPlan(1050);
+    return this.getMealPlan(kal, 10, headers);
   }
 
-  async getMealPlan(dailyCalories: number, tolerancePercentage: number = 10) {
+  async getMealPlan(
+    dailyCalories: number,
+    tolerancePercentage: number = 10,
+    headers: any
+  ) {
     const tolerance = dailyCalories * (tolerancePercentage / 100);
     const minCalories = dailyCalories - tolerance;
     const maxCalories = dailyCalories + tolerance;
-
     // Кешируем данные и предварительно фильтруем
     const [breakfasts, lunches, dinners] = await Promise.all([
-      this.getFilteredMeals(EatingType.BREAKFAST, minCalories, maxCalories),
-      this.getFilteredMeals(EatingType.LUNCH, minCalories, maxCalories),
-      this.getFilteredMeals(EatingType.DINNER, minCalories, maxCalories),
+      this.getFilteredMeals(
+        EatingType.BREAKFAST,
+        minCalories,
+        maxCalories,
+        headers
+      ),
+      this.getFilteredMeals(
+        EatingType.LUNCH,
+        minCalories,
+        maxCalories,
+        headers
+      ),
+      this.getFilteredMeals(
+        EatingType.DINNER,
+        minCalories,
+        maxCalories,
+        headers
+      ),
     ]);
-
     // Ограничиваем количество вариантов для перебора
     const MAX_PER_TYPE = 20; // Не более 20 вариантов каждого типа
     const sampledBreakfasts = this.sampleArray(breakfasts, MAX_PER_TYPE);
     const sampledLunches = this.sampleArray(lunches, MAX_PER_TYPE);
     const sampledDinners = this.sampleArray(dinners, MAX_PER_TYPE);
-
     const results: MealPlan[] = [];
 
     // Перебор с ранним выходом
     for (const breakfast of sampledBreakfasts) {
       for (const lunch of sampledLunches) {
-        const remainingCalories = maxCalories - breakfast.kcal - lunch.kcal;
+        const remainingCalories =
+          maxCalories - breakfast.dataValues.kcal - lunch.dataValues.kcal;
 
         // Быстрый поиск подходящих ужинов
         const suitableDinners = sampledDinners.filter(
-          (dinner) =>
-            dinner.kcal >= remainingCalories - tolerance &&
-            dinner.kcal <= remainingCalories + tolerance
+          ({ dataValues }) =>
+            dataValues.kcal >= remainingCalories - tolerance &&
+            dataValues.kcal <= remainingCalories + tolerance
         );
 
         for (const dinner of suitableDinners) {
-          const totalCalories = breakfast.kcal + lunch.kcal + dinner.kcal;
+          const totalCalories =
+            breakfast.dataValues.kcal +
+            lunch.dataValues.kcal +
+            dinner.dataValues.kcal;
           if (totalCalories >= minCalories && totalCalories <= maxCalories) {
             results.push({
               breakfast,
@@ -173,12 +195,17 @@ export class HealthyEatingService {
               dinner,
               totalCalories,
               totalSquirrels:
-                breakfast.squirrels + lunch.squirrels + dinner.squirrels,
-              totalFats: breakfast.fats + lunch.fats + dinner.fats,
+                breakfast.dataValues.squirrels +
+                lunch.dataValues.squirrels +
+                dinner.dataValues.squirrels,
+              totalFats:
+                breakfast.dataValues.fats +
+                lunch.dataValues.fats +
+                dinner.dataValues.fats,
               totalCarbohydrates:
-                breakfast.carbohydrates +
-                lunch.carbohydrates +
-                dinner.carbohydrates,
+                breakfast.dataValues.carbohydrates +
+                lunch.dataValues.carbohydrates +
+                dinner.dataValues.carbohydrates,
             });
 
             // Ограничиваем количество результатов
@@ -189,21 +216,44 @@ export class HealthyEatingService {
       }
       if (results.length >= 50) break;
     }
-
     // Сортировка и форматирование
     return this.formatResults(results, dailyCalories);
   }
 
-  private async getFilteredMeals(type: EatingType, min: number, max: number) {
-    return this.healthyEatingRepository.findAll({
+  private async getFilteredMeals(
+    type: EatingType,
+    min: number,
+    max: number,
+    headers: any
+  ) {
+    const basket = await this.basketService.findOne(headers);
+    if (!basket) throw new NotFoundException("Корзина не найдена");
+
+    const basketItems = (await basket.$get("items")).flatMap(
+      ({ dataValues }) => ({
+        id: dataValues.id,
+        inBasketQuantity: dataValues["BasketItems"].dataValues.quantity,
+      })
+    );
+
+    const items = await this.healthyEatingRepository.findAll({
       where: {
         eatingType: type,
-        kcal: {
-          [Op.between]: [min * 0.3, max * 0.5],
-        },
+        kcal: { [Op.between]: [min * 0.3, max * 0.5] },
       },
       limit: 100,
     });
+
+    const data: HealthyEatingDto[] = items.map((item) => ({
+      ...item,
+      dataValues: {
+        ...item.dataValues,
+        inBasketQuantity: basketItems.find((el) => el.id === item.dataValues.id)
+          ?.inBasketQuantity,
+      },
+    }));
+
+    return data;
   }
   private sampleArray(arr: any[], max: number) {
     return arr.length > max
@@ -218,12 +268,17 @@ export class HealthyEatingService {
           Math.abs(a.totalCalories - targetCalories) -
           Math.abs(b.totalCalories - targetCalories)
       )
-      .slice(0, 10) // Возвращаем только 10 лучших вариантов
+      .slice(0, 10)
       .map((combination) => ({
         meals: {
-          breakfast: this.formatter.formatMeal(combination.breakfast),
-          lunch: this.formatter.formatMeal(combination.lunch),
-          dinner: this.formatter.formatMeal(combination.dinner),
+          breakfast: this.formatter.formatMeal(
+            //@ts-ignore
+            combination.breakfast.dataValues
+          ),
+          //@ts-ignore
+          lunch: this.formatter.formatMeal(combination.lunch.dataValues),
+          //@ts-ignore
+          dinner: this.formatter.formatMeal(combination.dinner.dataValues),
         },
         totals: {
           calories: combination.totalCalories,
@@ -233,7 +288,7 @@ export class HealthyEatingService {
         },
       }));
   }
-  async addMealIntoBasket({ itemId, quantity }: AddToBasketDto, headers: any) {
+  async addMealIntoBasket({ itemId }: AddToBasketDto, headers: any) {
     const item = await this.healthyEatingRepository.findByPk(itemId);
     if (!item) {
       throw new NotFoundException("Продукт с таким id не найден");
@@ -242,6 +297,6 @@ export class HealthyEatingService {
     if (!basket) {
       throw new NotFoundException("Корзина не найдена");
     }
-    basket?.$add("items", itemId, { through: { quantity } });
+    basket?.$add("items", itemId, { through: { quantity: 1 } });
   }
 }

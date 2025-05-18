@@ -93,8 +93,8 @@ export class HealthyEatingController {
   @ApiOperation({ summary: "Получение продуктов для пользователя" })
   @ApiOkResponse({ type: MealPlanResponseDto, isArray: true })
   @Get("/user/:id")
-  getHealthyEatingForUser(@Param("id") id: string) {
-    return this.healthyEatingService.getForUser(+id);
+  getHealthyEatingForUser(@Param("id") id: string, @Headers() header: any) {
+    return this.healthyEatingService.getForUser(+id, header);
   }
 
   @ApiOperation({ summary: "Добавить продукт в корзину" })
