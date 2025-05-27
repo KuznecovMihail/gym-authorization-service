@@ -8,10 +8,12 @@ import {
 import { InjectModel } from "@nestjs/sequelize";
 import { Basket } from "./basket.model";
 import { BasketUser } from "./basket-user.model";
-import { FormatMeal, FormatterService } from "src/formatter/formatter.service";
+import { FormatterService } from "src/formatter/formatter.service";
 import { JwtService } from "@nestjs/jwt";
 import { BasketItems } from "./basket-items.model";
-import { HealthyEatingDto } from "src/healthy-eating/dto/healthy-eating-dto";
+import { OrderHistory } from "./dto/OrderHistory";
+import { QueryForAllData, QueryForFilters } from "./basket.controller";
+import { Op } from "sequelize";
 
 @Injectable()
 export class BasketService {
@@ -154,7 +156,7 @@ export class BasketService {
     throw new NotFoundException("Активная корзина не найдена");
   }
 
-  async orderHistory(headers: any) {
+  async orderHistory(headers: any, query: QueryForAllData) {
     const { authorization } = headers;
     const token = authorization.replace("Bearer ", "");
     const { id } = this.jwtService.decode(token);
@@ -166,11 +168,44 @@ export class BasketService {
       ({ dataValues }) => dataValues.baskeId
     );
 
-    const baskets: { items: FormatMeal[]; id: number }[] = [];
+    return this.getMappedBasketWithQuery(userBaskets, query);
+  }
 
-    for (const id of userBaskets) {
+  async getAllOrders(query: QueryForAllData) {
+    const { userId, basketId } = query;
+    const basketWhere: QueryForAllData[] = [];
+    !!userId && basketWhere.push({ userId });
+    !!basketId && basketWhere.push({ basketId });
+    const allBaskets = await this.basketUserRepository.findAll({
+      where: { ...Object.assign({}, ...basketWhere) },
+      order: [["id", "DESC"]],
+      attributes: ["baskeId"],
+    });
+
+    const basketsIds = allBaskets.map(({ dataValues: { baskeId } }) => baskeId);
+
+    return this.getMappedBasketWithQuery(basketsIds, query);
+  }
+
+  private async getMappedBasketWithQuery(
+    basketsIds: number[],
+    { price, isActive, updatedDate }: QueryForAllData
+  ) {
+    const baskets: OrderHistory[] = [];
+    for (const id of basketsIds) {
+      const itemWhere: QueryForFilters[] = [];
+      price && itemWhere.push({ price });
+      isActive !== undefined && itemWhere.push({ isActive });
+      updatedDate &&
+        itemWhere.push({
+          updatedAt: {
+            [Op.gte]: new Date(`${updatedDate}T00:00:00Z`),
+            [Op.lte]: new Date(`${updatedDate}T23:59:59Z`),
+          },
+        });
+
       const item = await this.basketRepository.findOne({
-        where: { id, isActive: false },
+        where: { id, ...Object.assign({}, ...itemWhere) },
       });
       const mappedData = item
         ? (await item.$get("items")).map((el) => ({
@@ -178,9 +213,16 @@ export class BasketService {
             quantity: el["BasketItems"].dataValues.quantity,
           }))
         : [];
+
       item &&
         mappedData.length &&
-        baskets.push({ items: mappedData, id: item?.dataValues.id });
+        baskets.push({
+          items: mappedData,
+          id: item?.dataValues.id,
+          isActive: item?.dataValues.isActive,
+          price: item?.dataValues.price,
+          updatedDate: item?.dataValues.updatedAt,
+        });
     }
 
     return baskets;

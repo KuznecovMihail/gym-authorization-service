@@ -1,3 +1,4 @@
+import { OrderHistory } from "./dto/OrderHistory";
 import {
   Controller,
   Delete,
@@ -6,11 +7,28 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { BasketService } from "./basket.service";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/jwt-auth-guard";
+import { Roles } from "src/auth/roles-auth.decorator";
+import { RolesEnum } from "src/enum/Roles";
+
+export interface QueryForAllData {
+  userId?: number;
+  basketId?: number;
+  price?: number;
+  isActive?: boolean;
+  updatedDate?: string;
+}
+
+export interface QueryForFilters {
+  price?: number;
+  isActive?: boolean;
+  updatedAt?: Record<string, Date>;
+}
 
 @ApiTags("Корзина")
 @Controller("basket")
@@ -63,12 +81,33 @@ export class BasketController {
   }
 
   @ApiOperation({
-    summary:
-      "Оформление зауказа - создание новой корзины, старая становится неактивной",
+    summary: "История заказов",
   })
   @UseGuards(JwtAuthGuard)
   @Get("/orderHistory")
-  orderHistory(@Headers() headers: any) {
-    return this.basketService.orderHistory(headers);
+  @ApiQuery({ name: "userId", type: Number, required: false })
+  @ApiQuery({ name: "summ", type: Number, required: false })
+  @ApiQuery({ name: "isActive", type: Boolean, required: false })
+  @ApiQuery({ name: "updatedDate", type: String, required: false })
+  @ApiQuery({ name: "basketId", type: Number, required: false })
+  @ApiResponse({ status: 200, type: [OrderHistory] })
+  orderHistory(@Headers() headers: any, @Query() query: QueryForAllData) {
+    return this.basketService.orderHistory(headers, query);
+  }
+
+  @ApiOperation({
+    summary: "Список всех заказо",
+  })
+  @Roles(RolesEnum.MANAGER)
+  @UseGuards(JwtAuthGuard)
+  @ApiQuery({ name: "userId", type: Number, required: false })
+  @ApiQuery({ name: "summ", type: Number, required: false })
+  @ApiQuery({ name: "isActive", type: Boolean, required: false })
+  @ApiQuery({ name: "updatedDate", type: String, required: false })
+  @ApiQuery({ name: "basketId", type: Number, required: false })
+  @ApiResponse({ status: 200, type: [OrderHistory] })
+  @Get("/allOrders")
+  orderForAdmin(@Query() query: QueryForAllData) {
+    return this.basketService.getAllOrders(query);
   }
 }
