@@ -23,6 +23,7 @@ import { BasketItems } from "./basket/basket-items.model";
 import { HealthyEating } from "./healthy-eating/healthy-eating.model";
 import { FormatterService } from './formatter/formatter.service';
 import { FormatterModule } from './formatter/formatter.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   controllers: [AuthController],
@@ -66,6 +67,7 @@ import { FormatterModule } from './formatter/formatter.module';
     UserRoleModule,
     BasketModule,
     FormatterModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule {}
