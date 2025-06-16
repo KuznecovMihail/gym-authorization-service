@@ -21,9 +21,9 @@ import { BasketUser } from "./basket/basket-user.model";
 import { Basket } from "./basket/basket.model";
 import { BasketItems } from "./basket/basket-items.model";
 import { HealthyEating } from "./healthy-eating/healthy-eating.model";
-import { FormatterService } from './formatter/formatter.service';
-import { FormatterModule } from './formatter/formatter.module';
-import { SubscriptionModule } from './subscription/subscription.module';
+import { FormatterService } from "./formatter/formatter.service";
+import { FormatterModule } from "./formatter/formatter.module";
+import { SubscriptionModule } from "./subscription/subscription.module";
 
 @Module({
   controllers: [AuthController],
@@ -62,6 +62,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     FilesModule,
     ServeStaticModule.forRoot({
       rootPath: path.resolve(__dirname, "static"),
+      exclude: ["/api*"],
     }),
     HealthyEatingModule,
     UserRoleModule,
