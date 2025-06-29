@@ -61,7 +61,7 @@ import { SubscriptionModule } from "./subscription/subscription.module";
     }),
     FilesModule,
     ServeStaticModule.forRoot({
-      rootPath: path.resolve(__dirname, "static"),
+      rootPath: path.resolve(__dirname, "../../host/dist"),
     }),
     HealthyEatingModule,
     UserRoleModule,
