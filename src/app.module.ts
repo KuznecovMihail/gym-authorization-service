@@ -62,7 +62,6 @@ import { SubscriptionModule } from "./subscription/subscription.module";
     FilesModule,
     ServeStaticModule.forRoot({
       rootPath: path.resolve(__dirname, "static"),
-      exclude: ["/api"],
     }),
     HealthyEatingModule,
     UserRoleModule,
