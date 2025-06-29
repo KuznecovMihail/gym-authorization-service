@@ -60,9 +60,9 @@ import { SubscriptionModule } from "./subscription/subscription.module";
       },
     }),
     FilesModule,
-    ServeStaticModule.forRoot({
-      rootPath: path.resolve(__dirname, "../../host/dist"),
-    }),
+    // ServeStaticModule.forRoot({
+    //   rootPath: path.resolve(__dirname, "../../host/dist"),
+    // }),
     HealthyEatingModule,
     UserRoleModule,
     BasketModule,
