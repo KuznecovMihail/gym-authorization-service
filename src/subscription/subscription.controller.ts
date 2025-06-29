@@ -37,7 +37,7 @@ export class SubscriptionController {
 
   @ApiOperation({ summary: "Получить все абонементы" })
   @ApiResponse({ status: 200, type: [ViewSubscriptionDto] })
-  @Get("/subscription")
+  @Get()
   findAll() {
     return this.subscriptionService.findAll();
   }
